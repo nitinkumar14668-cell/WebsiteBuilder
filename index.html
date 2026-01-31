@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Terminal - Website Domain App (Premium UI)</title>
+
+<style>
+  :root{
+    --bg:#0b1220;
+    --panel:#0f1a2e;
+    --panel2:#0c162a;
+    --card:rgba(255,255,255,0.06);
+    --border:rgba(255,255,255,0.12);
+    --text:#eaf2ff;
+    --muted:rgba(255,255,255,0.65);
+    --accent:#7c5cff;
+    --accent2:#00e5ff;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:system-ui,Segoe UI,Roboto,Arial;
+    background:radial-gradient(1000px 600px at 30% 0%, rgba(124,92,255,0.18), transparent 60%),
+               radial-gradient(900px 600px at 80% 10%, rgba(0,229,255,0.12), transparent 60%),
+               var(--bg);
+    color:var(--text);
+    overflow:hidden;
+  }
+
+  /* Themes */
+  .theme-minimal{ background:#fff; color:#0b0b0b; }
+  .theme-luxury{ background:#070707; color:#fff; }
+  .theme-neon{ background:linear-gradient(135deg,#050914,#160532); color:#fff; }
+
+  .app{
+    height:100vh;
+    display:grid;
+    grid-template-columns: 320px 1fr 340px;
+    gap:12px;
+    padding:12px;
+  }
+
+  .panel{
+    background:linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03));
+    border:1px solid var(--border);
+    border-radius:22px;
+    overflow:hidden;
+    box-shadow:0 12px 40px rgba(0,0,0,0.35);
+  }
+
+  .panelHeader{
+    padding:12px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    border-bottom:1px solid rgba(255,255,255,0.10);
+    background:rgba(0,0,0,0.14);
+  }
+  .brand{
+    font-weight:1000;
+    letter-spacing:0.3px;
+  }
+  .pill{
+    font-size:12px;
+    padding:6px 10px;
+    border-radius:999px;
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.12);
+    opacity:0.95;
+    white-space:nowrap;
+  }
+
+  .panelBody{
+    padding:12px;
+    height:calc(100% - 54px);
+    overflow:auto;
+  }
+
+  .btn{
+    cursor:pointer;
+    user-select:none;
+    border:0;
+    padding:10px 12px;
+    border-radius:16px;
+    font-weight:900;
+    color:#07131d;
+    background:linear-gradient(135deg, rgba(124,92,255,0.95), rgba(0,229,255,0.75));
+    transition:transform .12s ease;
+  }
+  .btn:active{ transform:scale(0.98); }
+  .btn.secondary{
+    background:rgba(255,255,255,0.08);
+    color:var(--text);
+    border:1px solid rgba(255,255,255,0.14);
+  }
+  .btn.danger{
+    background:rgba(255,70,70,0.16);
+    color:#ffdede;
+    border:1px solid rgba(255,70,70,0.25);
+  }
+
+  .row{display:flex; gap:10px; flex-wrap:wrap;}
+  .field{
+    width:100%;
+    padding:10px 12px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(0,0,0,0.18);
+    color:inherit;
+    outline:none;
+  }
+  label{font-size:12px; opacity:.7; display:block; margin:10px 0 6px;}
+
+  .tabs{display:flex; gap:10px; margin-top:10px;}
+  .tab{
+    cursor:pointer;
+    padding:8px 10px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.06);
+    font-size:12px;
+    font-weight:900;
+    opacity:.9;
+  }
+  .tab.active{
+    background:linear-gradient(135deg, rgba(124,92,255,0.35), rgba(0,229,255,0.22));
+    border-color:rgba(255,255,255,0.18);
+  }
+
+  /* Canvas area */
+  .stage{
+    position:relative;
+    height:100%;
+    border-radius:22px;
+    overflow:hidden;
+  }
+  .topBar{
+    position:absolute;
+    top:10px; left:10px; right:10px;
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    z-index:50;
+    pointer-events:none;
+  }
+  .topBar .pill{ pointer-events:auto; }
+
+  #zoomStage{
+    position:absolute;
+    inset:0;
+    padding:60px 20px 20px 20px;
+    overflow:auto;
+  }
+
+  #canvasWrap{
+    position:relative;
+    width:100%;
+    min-height:900px;
+    border-radius:22px;
+    background:rgba(0,0,0,0.14);
+    border:1px solid rgba(255,255,255,0.10);
+    overflow:hidden;
+  }
+
+  #canvas{
+    position:relative;
+    min-height:900px;
+    transform-origin:0 0;
+  }
+
+  #gridOverlay{
+    position:absolute;
+    inset:0;
+    opacity:0;
+    pointer-events:none;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+    background-size:20px 20px;
+    mix-blend-mode:overlay;
+  }
+
+  .draggable{
+    position:absolute;
+    padding:10px 12px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.08);
+    backdrop-filter: blur(8px);
+    color:inherit;
+    outline:none;
+    user-select:none;
+  }
+  .draggable.selected{
+    outline:2px solid rgba(0,229,255,0.75);
+    border-color:rgba(0,229,255,0.55);
+    box-shadow:0 10px 30px rgba(0,229,255,0.10);
+  }
+  .draggable.hasLink::after{
+    content:"🔗";
+    position:absolute;
+    top:-10px; right:-10px;
+    width:26px; height:26px;
+    border-radius:999px;
+    display:grid; place-items:center;
+    background:rgba(0,0,0,0.55);
+    border:1px solid rgba(255,255,255,0.18);
+    font-size:14px;
+  }
+
+  img.draggable{
+    padding:0;
+    border-radius:18px;
+    display:block;
+  }
+
+  /* Floating tools */
+  #floatingTools{
+    position:absolute;
+    z-index:80;
+    display:none;
+    padding:10px;
+    border-radius:18px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(0,0,0,0.45);
+    backdrop-filter: blur(12px);
+    box-shadow:0 16px 50px rgba(0,0,0,0.45);
+  }
+  .toolRow{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .iconBtn{
+    width:34px; height:34px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.08);
+    display:grid; place-items:center;
+    cursor:pointer;
+    user-select:none;
+  }
+  .iconBtn:active{ transform:scale(0.97); }
+
+  /* Preview iframe */
+  #preview{
+    position:absolute;
+    inset:0;
+    border:0;
+    z-index:120;
+    display:none;
+    background:#fff;
+  }
+
+  /* Responsive preview */
+  #previewFrame{
+    position:absolute;
+    inset:0;
+    z-index:140;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    gap:10px;
+    background:rgba(0,0,0,0.65);
+    backdrop-filter: blur(10px);
+  }
+  #previewDevice{
+    width:100%;
+    max-width:100%;
+    height:86vh;
+    border-radius:26px;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,0.14);
+    background:#000;
+    box-shadow:0 20px 80px rgba(0,0,0,0.55);
+  }
+  #previewIframe{
+    width:100%;
+    height:100%;
+    border:0;
+    background:#fff;
+  }
+
+  /* Toast + Save indicator */
+  #toast{
+    position:fixed;
+    bottom:18px; left:50%;
+    transform:translateX(-50%);
+    padding:10px 14px;
+    border-radius:999px;
+    background:rgba(0,0,0,0.55);
+    border:1px solid rgba(255,255,255,0.14);
+    display:none;
+    z-index:999;
+    font-weight:900;
+    font-size:13px;
+  }
+  #saveIndicator{
+    position:fixed;
+    top:16px; left:50%;
+    transform:translateX(-50%);
+    padding:8px 12px;
+    border-radius:999px;
+    background:rgba(124,92,255,0.18);
+    border:1px solid rgba(124,92,255,0.30);
+    display:none;
+    z-index:999;
+    font-weight:900;
+    font-size:12px;
+  }
+
+  /* Layers */
+  .layersBox{
+    margin-top:12px;
+    border-radius:18px;
+    border:1px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.05);
+    overflow:hidden;
+  }
+  .layerItem{
+    padding:10px 12px;
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+    cursor:pointer;
+  }
+  .layerItem:last-child{border-bottom:0;}
+  .layerItem.active{
+    background:linear-gradient(135deg, rgba(124,92,255,0.20), rgba(0,229,255,0.12));
+  }
+  .layerName{font-weight:1000;font-size:13px;}
+  .layerMeta{font-size:11px;opacity:.7;}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- LEFT PANEL -->
+  <div class="panel">
+    <div class="panelHeader">
+      <div class="brand">Terminal Builder</div>
+      <div class="pill" id="topPlan">FREE</div>
+    </div>
+    <div class="panelBody">
+      <label>Username</label>
+      <input class="field" id="username" placeholder="Enter username..." />
+
+      <div class="row" style="margin-top:10px;">
+        <button class="btn" onclick="loginUser()">Login</button>
+        <button class="btn secondary" onclick="logoutUser()">Logout</button>
+      </div>
+
+      <div class="pill" style="margin-top:10px;" id="userInfo">Login required.</div>
+
+      <!-- ✅ NEW: Email+Pass + OTP login -->
+      <div class="layersBox" style="margin-top:12px;">
+        <div class="layerItem" style="cursor:default;">
+          <div>
+            <div class="layerName">🔐 Real Login (LocalStorage)</div>
+            <div class="layerMeta">Email/Password + Mobile OTP</div>
+          </div>
+          <div class="pill" id="authModePill">OFF</div>
+        </div>
+        <div style="padding:12px;">
+          <div class="tabs">
+            <div class="tab active" id="authTabEmail" onclick="switchAuthTab('email')">Email</div>
+            <div class="tab" id="authTabOtp" onclick="switchAuthTab('otp')">OTP</div>
+          </div>
+
+          <!-- Email Auth -->
+          <div id="authEmailBox" style="margin-top:10px;">
+            <label>Email</label>
+            <input class="field" id="authEmail" placeholder="example@gmail.com" />
+            <label>Password</label>
+            <input class="field" id="authPass" type="password" placeholder="Enter password" />
+
+            <div class="row" style="margin-top:10px;">
+              <button class="btn secondary" onclick="signupEmail()">Signup</button>
+              <button class="btn" onclick="loginEmail()">Login</button>
+            </div>
+          </div>
+
+          <!-- OTP Auth -->
+          <div id="authOtpBox" style="margin-top:10px; display:none;">
+            <label>Mobile Number</label>
+            <input class="field" id="authMobile" placeholder="10 digit mobile" inputmode="numeric" />
+            <div class="row" style="margin-top:10px;">
+              <button class="btn secondary" onclick="sendOtp()">Send OTP</button>
+            </div>
+
+            <div id="otpArea" style="display:none;">
+              <label>Enter OTP</label>
+              <input class="field" id="authOtp" placeholder="OTP" inputmode="numeric" />
+              <div class="row" style="margin-top:10px;">
+                <button class="btn" onclick="verifyOtp()">Verify OTP</button>
+              </div>
+              <div class="pill" style="margin-top:10px;" id="otpHint">OTP: ----</div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <button class="btn danger" style="width:100%;" onclick="logoutUser()">Logout Account</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" id="tab-home" onclick="switchPage('home')">HOME</div>
+        <div class="tab" id="tab-about" onclick="switchPage('about')">ABOUT</div>
+        <div class="tab" id="tab-contact" onclick="switchPage('contact')">CONTACT</div>
+      </div>
+
+      <label>Premium Theme</label>
+      <select class="field" id="themeSelect">
+        <option value="theme-minimal">Minimal</option>
+        <option value="theme-luxury">Luxury</option>
+        <option value="theme-neon">Neon</option>
+      </select>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn" onclick="applyTheme()">Apply Theme</button>
+        <button class="btn secondary" onclick="saveSite()">Publish</button>
+      </div>
+
+      <label>Template</label>
+      <select class="field" id="templateSelect">
+        <option value="">Select template</option>
+        <option value="empty">Empty</option>
+        <option value="portfolio">Portfolio</option>
+        <option value="blog">Blog</option>
+        <option value="business">Business</option>
+        <option value="shop">Shop</option>
+        <option value="gaming">Gaming</option>
+      </select>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn secondary" onclick="loadTemplate()">Load Template</button>
+        <button class="btn danger" onclick="clearPage()">Clear Page</button>
+      </div>
+
+      <label>Add Elements</label>
+      <div class="row">
+        <button class="btn secondary" onclick="addTextBox('Previous Screen Text',60,120,20,true)">+ Text</button>
+        <button class="btn secondary" onclick="addButton('Button',60,180)">+ Button</button>
+        <button class="btn secondary" onclick="addImage()">+ Image</button>
+        <button class="btn secondary" onclick="addContactForm()">+ Form</button>
+      </div>
+
+      <label>Components Library</label>
+      <select class="field" id="componentSelect">
+        <option value="">Select component</option>
+        <option value="header">Header</option>
+        <option value="hero">Hero</option>
+        <option value="about">About</option>
+        <option value="pricing">Pricing</option>
+        <option value="testimonials">Testimonials</option>
+        <option value="footer">Footer</option>
+      </select>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn secondary" onclick="addComponent()">Add Component</button>
+      </div>
+
+      <label>Controls</label>
+      <div class="row">
+        <button class="btn secondary" onclick="toggleGrid()">Grid</button>
+        <button class="btn secondary" onclick="toggleSnap()">Snap</button>
+        <button class="btn secondary" onclick="undo()">Undo</button>
+        <button class="btn secondary" onclick="redo()">Redo</button>
+      </div>
+
+      <label>Export / Preview</label>
+      <div class="row">
+        <button class="btn" onclick="exportWebsite()">Export</button>
+        <button class="btn secondary" onclick="openPreviewPage()">Preview</button>
+        <button class="btn danger" onclick="closePreview()">Close Preview</button>
+      </div>
+
+      <label>Responsive Preview</label>
+      <select class="field" id="deviceSelect">
+        <option value="desktop">Desktop</option>
+        <option value="tablet">Tablet</option>
+        <option value="mobile">Mobile</option>
+      </select>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn secondary" onclick="openResponsivePreview()">Open</button>
+      </div>
+
+      <label>Layers</label>
+      <div class="layersBox" id="layersList"></div>
+    </div>
+  </div>
+
+  <!-- CENTER STAGE -->
+  <div class="panel stage" id="themeWrap">
+    <div class="topBar">
+      <div class="pill" id="topUser">Not Logged In</div>
+      <div class="pill">Premium UI</div>
+    </div>
+
+    <div id="zoomStage">
+      <div id="canvasWrap">
+        <div id="gridOverlay"></div>
+        <div id="canvas"></div>
+
+        <!-- Floating tools -->
+        <div id="floatingTools">
+          <div class="toolRow">
+            <div class="pill" id="elInfo">div</div>
+            <div class="iconBtn" title="Nudge Left" onclick="nudgeSelected(-10,0)">⬅️</div>
+            <div class="iconBtn" title="Nudge Right" onclick="nudgeSelected(10,0)">➡️</div>
+            <div class="iconBtn" title="Nudge Up" onclick="nudgeSelected(0,-10)">⬆️</div>
+            <div class="iconBtn" title="Nudge Down" onclick="nudgeSelected(0,10)">⬇️</div>
+            <div class="iconBtn" title="Scale +" onclick="scaleSelected(1.08)">➕</div>
+            <div class="iconBtn" title="Scale -" onclick="scaleSelected(0.92)">➖</div>
+            <div class="iconBtn" title="Duplicate" onclick="duplicateSelected()">📄</div>
+            <div class="iconBtn" title="Delete" onclick="deleteSelected()">🗑️</div>
+          </div>
+          <div class="toolRow" style="margin-top:8px;">
+            <div class="iconBtn" title="Bring Front" onclick="bringFront()">🔼</div>
+            <div class="iconBtn" title="Send Back" onclick="sendBack()">🔽</div>
+            <div class="iconBtn" title="Layer Up" onclick="layersUp()">⬆️</div>
+            <div class="iconBtn" title="Layer Down" onclick="layersDown()">⬇️</div>
+            <div class="iconBtn" title="Copy" onclick="copySelected()">📋</div>
+            <div class="iconBtn" title="Paste" onclick="pasteCopied()">📌</div>
+          </div>
+        </div>
+
+        <!-- Preview -->
+        <iframe id="preview"></iframe>
+
+        <!-- Responsive Preview -->
+        <div id="previewFrame">
+          <div class="row">
+            <button class="btn secondary" onclick="closeResponsivePreview()">Close</button>
+          </div>
+          <div id="previewDevice">
+            <iframe id="previewIframe"></iframe>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="panel" id="rightPanel">
+    <div class="panelHeader">
+      <div class="brand">Properties</div>
+      <div class="pill">Inspector</div>
+    </div>
+    <div class="panelBody">
+      <div id="noSelectionInfo" class="pill">Select an element to edit properties.</div>
+
+      <div id="propPanel" style="display:none;">
+        <label>Name</label>
+        <input class="field" id="propName" />
+
+        <div class="row">
+          <div style="flex:1;">
+            <label>X</label>
+            <input class="field" id="propX" type="number" />
+          </div>
+          <div style="flex:1;">
+            <label>Y</label>
+            <input class="field" id="propY" type="number" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div style="flex:1;">
+            <label>Width (Image)</label>
+            <input class="field" id="propW" type="number" />
+          </div>
+          <div style="flex:1;">
+            <label>Z</label>
+            <input class="field" id="propZ" type="number" />
+          </div>
+        </div>
+
+        <label>Font Size</label>
+        <input class="field" id="propFontSize" type="number" />
+
+        <label>Text Align</label>
+        <select class="field" id="propAlign">
+          <option value="">Default</option>
+          <option value="left">Left</option>
+          <option value="center">Center</option>
+          <option value="right">Right</option>
+        </select>
+
+        <div class="row">
+          <div style="flex:1;">
+            <label>Text Color</label>
+            <input class="field" id="propTextColor" type="color" />
+          </div>
+          <div style="flex:1;">
+            <label>Background</label>
+            <input class="field" id="propBgColor" type="color" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div style="flex:1;">
+            <label>Radius</label>
+            <input class="field" id="propRadius" type="number" />
+          </div>
+          <div style="flex:1;">
+            <label>Opacity</label>
+            <input class="field" id="propOpacity" type="number" step="0.05" min="0" max="1" />
+          </div>
+        </div>
+
+        <label>Link URL</label>
+        <input class="field" id="propLinkUrl" placeholder="https://..." />
+
+        <div class="row">
+          <div style="flex:1;">
+            <label>Target</label>
+            <select class="field" id="propLinkTarget">
+              <option value="_blank">New Tab</option>
+              <option value="_self">Same Tab</option>
+            </select>
+          </div>
+          <div style="flex:1;">
+            <label>Enable</label>
+            <select class="field" id="propLinkEnable">
+              <option value="0">OFF</option>
+              <option value="1">ON</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+<div id="saveIndicator"></div>
+
+<script>
+  // ===== Globals =====
+  let currentUser = null;
+  let currentPage = "home";
+  let selectedEl = null;
+  let previewMode = false;
+
+  const canvas = document.getElementById("canvas");
+  const themeWrap = document.getElementById("themeWrap");
+  const zoomStage = document.getElementById("zoomStage");
+  const floatingTools = document.getElementById("floatingTools");
+  const elInfo = document.getElementById("elInfo");
+  const toast = document.getElementById("toast");
+  const saveIndicator = document.getElementById("saveIndicator");
+
+  let historyStack = [];
+  let redoStack = [];
+  let snapToGrid = false;
+
+  let copiedHTML = null;
+
+  // =========================
+  // ✅ NEW: AUTH (LocalStorage)
+  // =========================
+  const AUTH_USERS_KEY = "tb_users_v1";
+  const AUTH_SESSION_KEY = "tb_session_v1";
+  const OTP_TEMP_KEY = "tb_otp_temp_v1";
+
+  function toastMsg(msg){
+    toast.innerText = msg;
+    toast.style.display = "block";
+    setTimeout(()=>toast.style.display="none", 1800);
+  }
+
+  function getUsers(){
+    try{ return JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || "{}"); }
+    catch(e){ return {}; }
+  }
+  function setUsers(obj){
+    localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(obj));
+  }
+
+  // Basic hash (not real security, but better than plain)
+  function simpleHash(str){
+    let h = 0;
+    for(let i=0;i<str.length;i++){
+      h = ((h<<5)-h) + str.charCodeAt(i);
+      h |= 0;
+    }
+    return "h" + Math.abs(h);
+  }
+
+  function setSession(session){
+    localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
+  }
+  function getSession(){
+    try{ return JSON.parse(localStorage.getItem(AUTH_SESSION_KEY) || "null"); }
+    catch(e){ return null; }
+  }
+  function clearSession(){
+    localStorage.removeItem(AUTH_SESSION_KEY);
+  }
+
+  function normalizeEmail(e){
+    return (e || "").trim().toLowerCase();
+  }
+
+  function switchAuthTab(mode){
+    const emailBox = document.getElementById("authEmailBox");
+    const otpBox = document.getElementById("authOtpBox");
+    const tabEmail = document.getElementById("authTabEmail");
+    const tabOtp = document.getElementById("authTabOtp");
+
+    if(mode === "otp"){
+      emailBox.style.display = "none";
+      otpBox.style.display = "block";
+      tabEmail.classList.remove("active");
+      tabOtp.classList.add("active");
+    } else {
+      emailBox.style.display = "block";
+      otpBox.style.display = "none";
+      tabOtp.classList.remove("active");
+      tabEmail.classList.add("active");
+    }
+  }
+
+  function updateAuthUI(){
+    const authModePill = document.getElementById("authModePill");
+    const topUser = document.getElementById("topUser");
+    const userInfo = document.getElementById("userInfo");
+
+    if(currentUser){
+      authModePill.innerText = "ON";
+      topUser.innerText = currentUser;
+      userInfo.innerText = "Logged in: " + currentUser;
+    } else {
+      authModePill.innerText = "OFF";
+      topUser.innerText = "Not Logged In";
+      userInfo.innerText = "Login required.";
+    }
+  }
+
+  function requireLogin(){
+    if(!currentUser){
+      toastMsg("❌ Please login first");
+      return false;
+    }
+    return true;
+  }
+
+  // Signup Email
+  window.signupEmail = function(){
+    const email = normalizeEmail(document.getElementById("authEmail").value);
+    const pass = document.getElementById("authPass").value.trim();
+
+    if(!email || !email.includes("@")){
+      toastMsg("❌ Enter valid email");
+      return;
+    }
+    if(pass.length < 4){
+      toastMsg("❌ Password min 4 chars");
+      return;
+    }
+
+    const users = getUsers();
+    if(users[email]){
+      toastMsg("❌ Email already registered");
+      return;
+    }
+
+    users[email] = {
+      type:"email",
+      email,
+      passHash: simpleHash(pass),
+      createdAt: Date.now()
+    };
+    setUsers(users);
+
+    toastMsg("✅ Signup success. Now login.");
+  };
+
+  // Login Email
+  window.loginEmail = function(){
+    const email = normalizeEmail(document.getElementById("authEmail").value);
+    const pass = document.getElementById("authPass").value.trim();
+
+    const users = getUsers();
+    if(!users[email]){
+      toastMsg("❌ Account not found. Signup first.");
+      return;
+    }
+    if(users[email].passHash !== simpleHash(pass)){
+      toastMsg("❌ Wrong password");
+      return;
+    }
+
+    currentUser = email;
+    setSession({ user: currentUser, type:"email", at: Date.now() });
+
+    // sync username input
+    document.getElementById("username").value = currentUser;
+
+    toastMsg("✅ Logged in: " + currentUser);
+    updateAuthUI();
+    loadSite();
+  };
+
+  // OTP Send
+  window.sendOtp = function(){
+    const mobile = (document.getElementById("authMobile").value || "").replace(/\D/g,"").trim();
+    if(mobile.length !== 10){
+      toastMsg("❌ Enter 10 digit mobile");
+      return;
+    }
+
+    const otp = String(Math.floor(100000 + Math.random()*900000));
+    localStorage.setItem(OTP_TEMP_KEY, JSON.stringify({
+      mobile,
+      otp,
+      createdAt: Date.now()
+    }));
+
+    document.getElementById("otpArea").style.display = "block";
+    document.getElementById("otpHint").innerText = "OTP: " + otp + " (demo)";
+    toastMsg("✅ OTP generated");
+  };
+
+  // OTP Verify
+  window.verifyOtp = function(){
+    const mobile = (document.getElementById("authMobile").value || "").replace(/\D/g,"").trim();
+    const otpInput = (document.getElementById("authOtp").value || "").replace(/\D/g,"").trim();
+
+    let temp = null;
+    try{ temp = JSON.parse(localStorage.getItem(OTP_TEMP_KEY) || "null"); }catch(e){}
+
+    if(!temp || temp.mobile !== mobile){
+      toastMsg("❌ Send OTP first");
+      return;
+    }
+
+    // OTP expiry 3 min
+    if(Date.now() - temp.createdAt > 3*60*1000){
+      toastMsg("❌ OTP expired, resend");
+      localStorage.removeItem(OTP_TEMP_KEY);
+      return;
+    }
+
+    if(temp.otp !== otpInput){
+      toastMsg("❌ Wrong OTP");
+      return;
+    }
+
+    // Create user in users list if not exists
+    const users = getUsers();
+    const key = "m:" + mobile;
+    if(!users[key]){
+      users[key] = {
+        type:"mobile",
+        mobile,
+        createdAt: Date.now()
+      };
+      setUsers(users);
+    }
+
+    currentUser = key;
+    setSession({ user: currentUser, type:"mobile", at: Date.now() });
+
+    document.getElementById("username").value = currentUser;
+
+    toastMsg("✅ OTP Login success");
+    updateAuthUI();
+    loadSite();
+  };
+
+  // Restore session on load
+  function restoreSession(){
+    const s = getSession();
+    if(s && s.user){
+      currentUser = s.user;
+      document.getElementById("username").value = currentUser;
+      updateAuthUI();
+      loadSite();
+    } else {
+      updateAuthUI();
+    }
+  }
+
+  // =========================
+  // Original Login/Logout functions (upgraded)
+  // =========================
+  window.loginUser = function(){
+    // This keeps your old login button working:
+    // if username is email -> login by session
+    const username = document.getElementById("username").value.trim();
+    if(!username){
+      toastMsg("❌ Enter username OR use Email/OTP login");
+      return;
+    }
+    currentUser = username;
+    setSession({ user: currentUser, type:"username", at: Date.now() });
+    toastMsg("✅ Logged in: " + currentUser);
+    updateAuthUI();
+    loadSite();
+  };
+
+  window.logoutUser = function(){
+    currentUser = null;
+    clearSession();
+    toastMsg("👋 Logged out");
+    updateAuthUI();
+    canvas.innerHTML = "";
+    document.getElementById("layersList").innerHTML = "";
+  };
+
+  // ===== Utility =====
+  function showSaveIndicator(){
+    saveIndicator.innerText = "Saving...";
+    saveIndicator.style.display = "block";
+    clearTimeout(window.__saveTimer);
+    window.__saveTimer = setTimeout(()=> saveIndicator.style.display="none", 900);
+  }
+
+  function getKey(page){
+    return `site_${currentUser}_${page}`;
+  }
+
+  // ===== Pages =====
+  window.switchPage = function(page){
+    if(!requireLogin()) return;
+    currentPage = page;
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    document.getElementById("tab-"+page).classList.add("active");
+    loadSite();
+  };
+
+  // ===== Theme =====
+  window.applyTheme = function(){
+    if(!requireLogin()) return;
+    const theme = document.getElementById("themeSelect").value;
+    themeWrap.className = "panel stage " + theme;
+    localStorage.setItem(`theme_${currentUser}`, theme);
+    toastMsg("🎨 Theme applied");
+  };
+
+  function loadTheme(){
+    if(!currentUser) return;
+    const theme = localStorage.getItem(`theme_${currentUser}`) || "";
+    if(theme){
+      themeWrap.className = "panel stage " + theme;
+      document.getElementById("themeSelect").value = theme;
+    }
+  }
+
+  // ===== Save/Load =====
+  window.saveSite = function(){
+    if(!requireLogin()) return;
+    const html = canvas.innerHTML;
+    localStorage.setItem(getKey(currentPage), html);
+    showSaveIndicator();
+    toastMsg("💾 Saved!");
+  };
+
+  function loadSite(){
+    if(!currentUser) return;
+    loadTheme();
+    const html = localStorage.getItem(getKey(currentPage)) || "";
+    canvas.innerHTML = html;
+    attachCanvasEvents();
+    refreshLayers();
+  }
+
+  // ===== Canvas element events =====
+  function attachCanvasEvents(){
+    canvas.querySelectorAll(".draggable").forEach(el=>{
+      el.addEventListener("mousedown", startDrag);
+      el.addEventListener("click", ()=> selectEl(el));
+    });
+  }
+
+  // ===== Add Elements =====
+  window.addTextBox = function(text,x,y,fontSize,locked){
+    if(!requireLogin()) return;
+    const div = document.createElement("div");
+    div.className = "draggable";
+    div.contentEditable = true;
+    div.innerText = text || "Text";
+    div.style.left = (x||60)+"px";
+    div.style.top = (y||120)+"px";
+    div.style.fontSize = (fontSize||18)+"px";
+    canvas.appendChild(div);
+    attachCanvasEvents();
+    pushHistory();
+    refreshLayers();
+  };
+
+  window.addButton = function(text,x,y){
+    if(!requireLogin()) return;
+    const btn = document.createElement("button");
+    btn.className = "draggable btn secondary";
+    btn.innerText = text || "Button";
+    btn.style.left = (x||60)+"px";
+    btn.style.top = (y||180)+"px";
+    btn.style.position = "absolute";
+    canvas.appendChild(btn);
+    attachCanvasEvents();
+    pushHistory();
+    refreshLayers();
+  };
+
+  window.addImage = function(){
+    if(!requireLogin()) return;
+    const url = prompt("Enter image URL:");
+    if(!url) return;
+    const img = document.createElement("img");
+    img.src = url;
+    img.className = "draggable";
+    img.style.left = "60px";
+    img.style.top = "240px";
+    img.style.width = "240px";
+    img.style.height = "auto";
+    canvas.appendChild(img);
+    attachCanvasEvents();
+    pushHistory();
+    refreshLayers();
+  };
+
+  window.addContactForm = function(){
+    if(!requireLogin()) return;
+    const form = document.createElement("div");
+    form.className = "draggable";
+    form.style.left = "60px";
+    form.style.top = "520px";
+    form.style.width = "320px";
+    form.innerHTML = `
+      <div style="font-weight:1000;margin-bottom:8px;">Contact Form</div>
+      <input class="field" placeholder="Name" style="margin-bottom:8px;" />
+      <input class="field" placeholder="Email" style="margin-bottom:8px;" />
+      <textarea class="field" placeholder="Message" style="height:90px;"></textarea>
+      <button class="btn" style="margin-top:10px;width:100%;">Send</button>
+    `;
+    canvas.appendChild(form);
+    attachCanvasEvents();
+    pushHistory();
+    refreshLayers();
+  };
+
+  // ===== Components =====
+  window.addComponent = function(){
+    if(!requireLogin()) return;
+    const comp = document.getElementById("componentSelect").value;
+    if(!comp) return;
+
+    const box = document.createElement("div");
+    box.className = "draggable";
+    box.style.left = "60px";
+    box.style.top = "120px";
+    box.style.width = "520px";
+
+    if(comp==="header"){
+      box.innerHTML = `<div style="font-size:26px;font-weight:1000;">Header</div>`;
+    } else if(comp==="hero"){
+      box.innerHTML = `<div style="font-size:32px;font-weight:1000;">Hero Section</div><div style="opacity:.7;">Some subtitle text</div>`;
+    } else if(comp==="about"){
+      box.innerHTML = `<div style="font-size:22px;font-weight:1000;">About</div><div style="opacity:.7;">Write about yourself</div>`;
+    } else if(comp==="pricing"){
+      box.innerHTML = `<div style="font-size:22px;font-weight:1000;">Pricing</div><div class="pill" style="display:inline-block;margin-top:8px;">$9/mo</div>`;
+    } else if(comp==="testimonials"){
+      box.innerHTML = `<div style="font-size:22px;font-weight:1000;">Testimonials</div><div style="opacity:.7;">"Amazing!"</div>`;
+    } else if(comp==="footer"){
+      box.innerHTML = `<div style="font-size:18px;font-weight:1000;">Footer</div><div style="opacity:.7;">© 2026</div>`;
+    }
+
+    canvas.appendChild(box);
+    attachCanvasEvents();
+    pushHistory();
+    refreshLayers();
+  };
+
+  // ===== Grid + Snap =====
+  window.toggleGrid = function(){
+    if(!requireLogin()) return;
+    const grid = document.getElementById("gridOverlay");
+    grid.style.opacity = grid.style.opacity === "1" ? "0" : "1";
+  };
+
+  window.toggleSnap = function(){
+    if(!requireLogin()) return;
+    snapToGrid = !snapToGrid;
+    toastMsg("Snap: " + (snapToGrid ? "ON" : "OFF"));
+  };
+
+  // ===== Drag =====
+  let dragOffsetX=0, dragOffsetY=0;
+  function startDrag(e){
+    if(previewMode) return;
+    selectEl(e.currentTarget);
+    dragOffsetX = e.offsetX;
+    dragOffsetY = e.offsetY;
+
+    document.addEventListener("mousemove", onDrag);
+    document.addEventListener("mouseup", stopDrag);
+  }
+  function onDrag(e){
+    if(!selectedEl) return;
+    const rect = canvas.getBoundingClientRect();
+    let x = e.clientX - rect.left - dragOffsetX;
+    let y = e.clientY - rect.top - dragOffsetY;
+
+    if(snapToGrid){
+      x = Math.round(x/20)*20;
+      y = Math.round(y/20)*20;
+    }
+
+    selectedEl.style.left = x+"px";
+    selectedEl.style.top = y+"px";
+    updatePropsFromSelection();
+  }
+  function stopDrag(){
+    document.removeEventListener("mousemove", onDrag);
+    document.removeEventListener("mouseup", stopDrag);
+    pushHistory();
+    refreshLayers();
+  }
+
+  // ===== Selection =====
+  function selectEl(el){
+    if(previewMode) return;
+    if(selectedEl) selectedEl.classList.remove("selected");
+    selectedEl = el;
+    selectedEl.classList.add("selected");
+    showFloatingTools();
+    updatePropsPanel();
+    updatePropsFromSelection();
+  }
+
+  function showFloatingTools(){
+    if(!selectedEl) return;
+    const rect = selectedEl.getBoundingClientRect();
+    floatingTools.style.display = "block";
+    floatingTools.style.left = (rect.left + rect.width + 10) + "px";
+    floatingTools.style.top = (rect.top - 10) + "px";
+    elInfo.innerText = selectedEl.tagName.toLowerCase();
+  }
+
+  // ===== Floating tool actions =====
+  window.nudgeSelected = function(dx,dy){
+    if(!selectedEl) return;
+    selectedEl.style.left = (parseInt(selectedEl.style.left||0)+dx)+"px";
+    selectedEl.style.top = (parseInt(selectedEl.style.top||0)+dy)+"px";
+    pushHistory();
+    refreshLayers();
+  };
+
+  window.scaleSelected = function(f){
+    if(!selectedEl) return;
+    const w = selectedEl.offsetWidth;
+    selectedEl.style.width = Math.max(30, w*f) + "px";
+    pushHistory();
+    refreshLayers();
+  };
+
+  window.duplicateSelected = function(){
+    if(!selectedEl) return;
+    const clone = selectedEl.cloneNode(true);
+    clone.style.left = (parseInt(selectedEl.style.left||0)+20)+"px";
+    clone.style.top = (parseInt(selectedEl.style.top||0)+20)+"px";
+    canvas.appendChild(clone);
+    attachCanvasEvents();
+    pushHistory();
+    refreshLayers();
+  };
+
+  window.deleteSelected = function(){
+    if(!selectedEl) return;
+    selectedEl.remove();
+    selectedEl = null;
+    floatingTools.style.display = "none";
+    pushHistory();
+    refreshLayers();
+  };
+
+  window.bringFront = function(){
+    if(!selectedEl) return;
+    selectedEl.style.zIndex = 999;
+    pushHistory();
+    refreshLayers();
+  };
+
+  window.sendBack = function(){
+    if(!selectedEl) return;
+    selectedEl.style.zIndex = 1;
+    pushHistory();
+    refreshLayers();
+  };
+
+  window.layersUp = function(){
+    if(!selectedEl) return;
+    const z = parseInt(selectedEl.style.zIndex||1);
+    selectedEl.style.zIndex = z+1;
+    pushHistory();
+    refreshLayers();
+  };
+
+  window.layersDown = function(){
+    if(!selectedEl) return;
+    const z = parseInt(selectedEl.style.zIndex||1);
+    selectedEl.style.zIndex = Math.max(1, z-1);
+    pushHistory();
+    refreshLayers();
+  };
+
+  window.copySelected = function(){
+    if(!selectedEl) return;
+    copiedHTML = selectedEl.outerHTML;
+    toastMsg("📋 Copied");
+  };
+
+  window.pasteCopied = function(){
+    if(!copiedHTML) return;
+    const tmp = document.createElement("div");
+    tmp.innerHTML = copiedHTML;
+    const el = tmp.firstChild;
+    el.style.left = (parseInt(el.style.left||0)+30)+"px";
+    el.style.top = (parseInt(el.style.top||0)+30)+"px";
+    canvas.appendChild(el);
+    attachCanvasEvents();
+    pushHistory();
+    refreshLayers();
+  };
+
+  // ===== Props panel =====
+  function updatePropsPanel(){
+    const noSel = document.getElementById("noSelectionInfo");
+    const prop = document.getElementById("propPanel");
+    if(selectedEl){
+      noSel.style.display="none";
+      prop.style.display="block";
+    } else {
+      noSel.style.display="block";
+      prop.style.display="none";
+    }
+  }
+
+  function updatePropsFromSelection(){
+    if(!selectedEl) return;
+
+    document.getElementById("propName").value = selectedEl.innerText || selectedEl.tagName;
+    document.getElementById("propX").value = parseInt(selectedEl.style.left||0);
+    document.getElementById("propY").value = parseInt(selectedEl.style.top||0);
+    document.getElementById("propZ").value = parseInt(selectedEl.style.zIndex||1);
+
+    const fs = window.getComputedStyle(selectedEl).fontSize;
+    document.getElementById("propFontSize").value = parseInt(fs);
+
+    document.getElementById("propOpacity").value = selectedEl.style.opacity || 1;
+  }
+
+  // Bind prop inputs
+  ["propX","propY","propZ","propFontSize","propOpacity"].forEach(id=>{
+    document.getElementById(id).addEventListener("input", ()=>{
+      if(!selectedEl) return;
+      selectedEl.style.left = document.getElementById("propX").value+"px";
+      selectedEl.style.top = document.getElementById("propY").value+"px";
+      selectedEl.style.zIndex = document.getElementById("propZ").value;
+      selectedEl.style.fontSize = document.getElementById("propFontSize").value+"px";
+      selectedEl.style.opacity = document.getElementById("propOpacity").value;
+      pushHistory();
+      refreshLayers();
+    });
+  });
+
+  // ===== History =====
+  function pushHistory(){
+    if(!currentUser) return;
+    historyStack.push(canvas.innerHTML);
+    if(historyStack.length>50) historyStack.shift();
+    redoStack = [];
+  }
+  window.undo = function(){
+    if(historyStack.length<2) return;
+    redoStack.push(historyStack.pop());
+    canvas.innerHTML = historyStack[historyStack.length-1];
+    attachCanvasEvents();
+    refreshLayers();
+  };
+  window.redo = function(){
+    if(!redoStack.length) return;
+    const state = redoStack.pop();
+    historyStack.push(state);
+    canvas.innerHTML = state;
+    attachCanvasEvents();
+    refreshLayers();
+  };
+
+  // ===== Layers list =====
+  function refreshLayers(){
+    const list = document.getElementById("layersList");
+    list.innerHTML = "";
+    const els = Array.from(canvas.querySelectorAll(".draggable"));
+    els.forEach((el,idx)=>{
+      const item = document.createElement("div");
+      item.className = "layerItem" + (el===selectedEl ? " active":"");
+      const name = (el.tagName.toLowerCase()==="img") ? "Image" : (el.innerText||el.tagName).slice(0,18);
+      item.innerHTML = `
+        <div>
+          <div class="layerName">${idx+1}. ${name}</div>
+          <div class="layerMeta">z:${el.style.zIndex||1}</div>
+        </div>
+        <div class="pill">Select</div>
+      `;
+      item.onclick = ()=> selectEl(el);
+      list.appendChild(item);
+    });
+  }
+
+  // ===== Templates =====
+  window.loadTemplate = function(){
+    if(!requireLogin()) return;
+    const t = document.getElementById("templateSelect").value;
+    if(!t) return;
+
+    canvas.innerHTML = "";
+    if(t==="portfolio"){
+      addTextBox("My Portfolio",60,80,34,true);
+      addTextBox("Hi, I am a creator.",60,140,18,true);
+      addButton("Contact Me",60,200);
+    } else if(t==="blog"){
+      addTextBox("My Blog",60,80,34,true);
+      addTextBox("Latest posts...",60,140,18,true);
+    } else if(t==="business"){
+      addTextBox("Business Website",60,80,34,true);
+      addTextBox("Services | Pricing | Contact",60,140,18,true);
+      addButton("Get Quote",60,200);
+    } else if(t==="shop"){
+      addTextBox("Online Shop",60,80,34,true);
+      addButton("Buy Now",60,160);
+    } else if(t==="gaming"){
+      addTextBox("Gaming Zone",60,80,34,true);
+      addTextBox("Welcome to the arena!",60,140,18,true);
+      addButton("Start",60,200);
+    }
+
+    pushHistory();
+    refreshLayers();
+  };
+
+  window.clearPage = function(){
+    if(!requireLogin()) return;
+    if(confirm("Clear this page?")){
+      canvas.innerHTML = "";
+      pushHistory();
+      refreshLayers();
+    }
+  };
+
+  // ===== Export =====
+  window.exportWebsite = function(){
+    if(!requireLogin()) return;
+    const content = canvas.innerHTML;
+    const blob = new Blob([content], {type:"text/html"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `site_${currentUser}_${currentPage}.html`;
+    a.click();
+    toastMsg("⬇️ Exported");
+  };
+
+  // ===== Preview =====
+  window.openPreviewPage = function(){
+    if(!requireLogin()) return;
+    previewMode = true;
+    const iframe = document.getElementById("preview");
+    iframe.style.display = "block";
+    iframe.srcdoc = canvas.innerHTML;
+  };
+  window.closePreview = function(){
+    previewMode = false;
+    document.getElementById("preview").style.display = "none";
+  };
+
+  // ===== Responsive Preview =====
+  window.openResponsivePreview = function(){
+    if(!requireLogin()) return;
+    const frame = document.getElementById("previewFrame");
+    const iframe = document.getElementById("previewIframe");
+    frame.style.display = "flex";
+    iframe.srcdoc = canvas.innerHTML;
+
+    const device = document.getElementById("deviceSelect").value;
+    const dev = document.getElementById("previewDevice");
+    if(device==="mobile"){
+      dev.style.width="390px";
+      dev.style.height="82vh";
+    } else if(device==="tablet"){
+      dev.style.width="820px";
+      dev.style.height="82vh";
+    } else {
+      dev.style.width="100%";
+      dev.style.height="86vh";
+    }
+  };
+  window.closeResponsivePreview = function(){
+    document.getElementById("previewFrame").style.display = "none";
+  };
+
+  // ===== Init =====
+  restoreSession();
+</script>
+
+</body>
+</html>
